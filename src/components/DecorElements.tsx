@@ -43,7 +43,7 @@ export const WallMirrors: React.FC<{ position: [number, number, number] }> = ({ 
       <cylinderGeometry args={[0.22, 0.22, 0.03, 32]} />
       <meshStandardMaterial color="#efe6db" metalness={0.25} roughness={0.11} />
     </mesh>
-    {/* Smallener */}
+    {/* Smaller */}
     <mesh position={[0.35, 2.15, 0.09]}>
       <cylinderGeometry args={[0.11, 0.11, 0.02, 32]} />
       <meshStandardMaterial color="#d5b486" metalness={0.19} roughness={0.12} />
@@ -63,3 +63,44 @@ export const RoomRug: React.FC<{ position: [number, number, number] }> = ({ posi
   </mesh>
 );
 
+// Kitchen - Fridge
+export const Fridge: React.FC<{ position: [number, number, number] }> = ({ position }) => (
+  <group position={position}>
+    <mesh position={[0, 0.8, 0]}>
+      <boxGeometry args={[0.7, 1.6, 0.6]} />
+      <meshStandardMaterial color="#e8e8e8" metalness={0.6} roughness={0.2} />
+    </mesh>
+    <mesh position={[0, 1.4, 0.31]} castShadow>
+      <boxGeometry args={[0.1, 0.1, 0.02]} />
+      <meshStandardMaterial color="#333" metalness={0.5} roughness={0.2} />
+    </mesh>
+  </group>
+);
+
+// Coffee Maker
+export const CoffeeMaker: React.FC<{ position: [number, number, number] }> = ({ position }) => (
+  <group position={position}>
+    <mesh position={[0, 0, 0]}>
+      <boxGeometry args={[0.24, 0.35, 0.24]} />
+      <meshStandardMaterial color="#222222" metalness={0.4} roughness={0.3} />
+    </mesh>
+    <mesh position={[0, 0.2, 0]}>
+      <cylinderGeometry args={[0.08, 0.08, 0.1, 12]} />
+      <meshStandardMaterial color="#444444" metalness={0.5} roughness={0.2} />
+    </mesh>
+  </group>
+);
+
+// Microwave
+export const Microwave: React.FC<{ position: [number, number, number] }> = ({ position }) => (
+  <group position={position}>
+    <mesh position={[0, 0, 0]}>
+      <boxGeometry args={[0.45, 0.28, 0.32]} />
+      <meshStandardMaterial color="#444444" metalness={0.4} roughness={0.3} />
+    </mesh>
+    <mesh position={[0, 0, 0.17]} castShadow>
+      <boxGeometry args={[0.32, 0.22, 0.02]} />
+      <meshStandardMaterial color="#222" opacity={0.7} transparent={true} />
+    </mesh>
+  </group>
+);

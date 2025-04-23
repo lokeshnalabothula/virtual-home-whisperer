@@ -3,7 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { DeviceState } from '@/types/types';
 import * as THREE from 'three';
-import { Plant, RoomRug, TVSet, WallMirrors } from "./DecorElements";
+import { Plant, RoomRug, TVSet, WallMirrors, Fridge, CoffeeMaker, Microwave } from "./DecorElements";
 import { Wire } from "./Wire";
 
 const Wall = ({
@@ -71,6 +71,23 @@ const Room = ({
           <Plant position={[2.18, 0.14, 2.07]} />
           <TVSet position={[-1.62, 0.03, -2.05]} />
           <WallMirrors position={[-2, 1.26, 2.48]} />
+        </>
+      )}
+      {decorKey === "kitchen" && (
+        <>
+          <Fridge position={[-1.8, 0.5, -2]} />
+          <CoffeeMaker position={[1.5, 0.5, -1.8]} />
+          <Microwave position={[1.5, 0.92, -1.8]} />
+        </>
+      )}
+      {decorKey === "bedroom" && (
+        <>
+          <RoomRug position={[0, 0.01, 0]} />
+        </>
+      )}
+      {decorKey === "bathroom" && (
+        <>
+          <RoomRug position={[0, 0.01, 0]} />
         </>
       )}
       {children}
@@ -215,7 +232,7 @@ const HouseScene = ({ devices }: { devices: Record<string, DeviceState> }) => {
   const deviceOffsets: Record<string, [number, number, number]> = {
     light: [0, 2.65, -1.1],
     fan: [1, 2.5, 1],
-    switch: [2, 1.3, 1.8],
+    switch: [1.8, 1.3, 1.8],
   };
 
   return (
