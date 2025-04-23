@@ -62,7 +62,7 @@ export const CommandInterface: React.FC<CommandInterfaceProps> = ({ onCommand })
         // Start active listening after a brief pause
         setTimeout(() => {
           startListening();
-        }, 500);
+        }, 300);
       }
     };
     
@@ -112,43 +112,53 @@ export const CommandInterface: React.FC<CommandInterfaceProps> = ({ onCommand })
     }
   };
   
-  // Handle voice commands
+  // Handle voice commands - IMPROVED FUNCTIONALITY
   const startListening = () => {
     if (!supportsSpeech) return;
     
     setIsListening(true);
     
-    // Use any type to bypass TypeScript errors with Speech Recognition API
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     const recognition = new SpeechRecognition();
     
     recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.interimResults = true; // Enable interim results for faster response
     recognition.lang = 'en-US';
     
     recognition.onresult = (event: any) => {
+      // Get both interim and final results
       const transcript = event.results[0][0].transcript;
+      // Update text field in real time
       setTextCommand(transcript);
-      const command = processCommand(transcript);
-      onCommand(command);
       
-      // Show Siri-like response
-      toast({
-        title: "Processing command",
-        description: `"${transcript}"`,
-        duration: 3000
-      });
-      
-      // Hide interface after processing
-      setTimeout(() => {
-        setIsVisible(false);
-        // Resume background listening
-        setupBackgroundListening();
-      }, 3000);
+      // Process command only on final result
+      if (event.results[0].isFinal) {
+        const command = processCommand(transcript);
+        onCommand(command);
+        
+        // Show Siri-like response
+        toast({
+          title: "I heard you say",
+          description: `"${transcript}"`,
+          duration: 3000
+        });
+        
+        // Hide interface after processing
+        setTimeout(() => {
+          setIsVisible(false);
+          // Resume background listening
+          setupBackgroundListening();
+        }, 3000);
+      }
     };
     
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error', event.error);
+      toast({
+        title: "Voice Recognition Error",
+        description: "Please try again or type your command",
+        duration: 3000
+      });
       setIsListening(false);
       // Resume background listening
       setupBackgroundListening();
@@ -201,31 +211,36 @@ export const CommandInterface: React.FC<CommandInterfaceProps> = ({ onCommand })
 
   return (
     <div className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 w-full max-w-md transition-all duration-300 ${isAnimating ? 'scale-95 opacity-90' : 'scale-100 opacity-100'}`}>
-      <form onSubmit={handleSubmit} className="flex gap-2 p-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg shadow-lg backdrop-blur-sm">
+      <form onSubmit={handleSubmit} className="flex gap-2 p-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-2xl shadow-xl backdrop-blur-md">
         <input
           type="text"
           value={textCommand}
           onChange={(e) => setTextCommand(e.target.value)}
-          className="flex-1 p-3 bg-white/80 backdrop-blur-md border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-smarthome-purple-light focus:border-transparent text-base"
-          placeholder="Say 'Bala' to activate..."
+          className="flex-1 p-4 bg-white/90 backdrop-blur-md border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent text-lg font-medium"
+          placeholder={isListening ? "Listening..." : "Say 'Bala' to activate..."}
           autoFocus
         />
         <button 
           type="submit" 
-          className="bg-white/90 text-purple-700 p-3 rounded-md hover:bg-white"
+          className="bg-white/90 text-purple-700 p-4 rounded-xl hover:bg-white transition-colors"
         >
-          <Send size={20} />
+          <Send size={22} />
         </button>
         {supportsSpeech && (
           <button 
             type="button" 
             onClick={startListening}
-            className={`p-3 rounded-md ${isListening ? 'bg-red-500 animate-pulse' : 'bg-white/90'} text-purple-700`}
+            className={`p-4 rounded-xl ${isListening ? 'bg-red-500 animate-pulse' : 'bg-white/90'} text-purple-700 transition-colors`}
           >
-            {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+            {isListening ? <MicOff size={22} /> : <Mic size={22} />}
           </button>
         )}
       </form>
+      {isListening && (
+        <div className="mt-2 text-center font-medium text-white bg-purple-600/80 rounded-xl p-2 backdrop-blur-sm animate-pulse">
+          Listening...
+        </div>
+      )}
     </div>
   );
 };

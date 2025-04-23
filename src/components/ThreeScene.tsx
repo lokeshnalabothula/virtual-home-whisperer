@@ -1,10 +1,14 @@
+
 import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { DeviceState } from '@/types/types';
 import * as THREE from 'three';
-import { Plant, RoomRug, TVSet, WallMirrors, Fridge, CoffeeMaker, Microwave } from "./DecorElements";
-import { Wire } from "./Wire";
+import { 
+  Plant, RoomRug, TVSet, WallMirrors, Fridge, CoffeeMaker, 
+  Microwave, Toaster, KitchenCounter, DiningTable, Chair, 
+  Bed, BathroomSink, Shower 
+} from "./DecorElements";
 
 const Wall = ({
   position = [0, 0, 0],
@@ -67,27 +71,37 @@ const Room = ({
       <Wall position={[w / 2 - t / 2, h / 2, 0]} size={[t, h, d]} color={wallColor} />
       {decorKey === "living" && (
         <>
-          <RoomRug position={[0.8, 0.01, 1]} />
+          <RoomRug position={[0.4, 0.01, 0.6]} />
           <Plant position={[2.18, 0.14, 2.07]} />
           <TVSet position={[-1.62, 0.03, -2.05]} />
           <WallMirrors position={[-2, 1.26, 2.48]} />
+          <DiningTable position={[-1.2, 0.03, 1]} />
+          <Chair position={[-1.2, 0.03, 1.4]} />
+          <Chair position={[-1.6, 0.03, 1]} />
+          <Chair position={[-0.8, 0.03, 1]} />
         </>
       )}
       {decorKey === "kitchen" && (
         <>
           <Fridge position={[-1.8, 0.5, -2]} />
-          <CoffeeMaker position={[1.5, 0.5, -1.8]} />
-          <Microwave position={[1.5, 0.92, -1.8]} />
+          <KitchenCounter position={[0.2, 0.03, -1.8]} />
+          <CoffeeMaker position={[-0.6, 0.5, -1.8]} />
+          <Microwave position={[0.2, 0.92, -1.8]} />
+          <Toaster position={[0.8, 0.5, -1.8]} />
         </>
       )}
       {decorKey === "bedroom" && (
         <>
           <RoomRug position={[0, 0.01, 0]} />
+          <Bed position={[0, 0.03, 0]} />
+          <Plant position={[1.8, 0.14, -1.8]} />
         </>
       )}
       {decorKey === "bathroom" && (
         <>
-          <RoomRug position={[0, 0.01, 0]} />
+          <RoomRug position={[0, 0.01, 1.8]} />
+          <BathroomSink position={[-1.8, 0.03, -1.8]} />
+          <Shower position={[1.8, 0.03, -1.8]} />
         </>
       )}
       {children}
@@ -222,13 +236,6 @@ const HouseScene = ({ devices }: { devices: Record<string, DeviceState> }) => {
     }
   ];
 
-  const outWallOrigin: Record<string, [number, number, number]> = {
-    living: [-2.37, 0.32, 2.37],
-    kitchen: [4.68, 0.35, 2.38],
-    bedroom: [-2.37, 0.36, 6.98],
-    bathroom: [4.68, 0.36, 6.98],
-  };
-
   const deviceOffsets: Record<string, [number, number, number]> = {
     light: [0, 2.65, -1.1],
     fan: [1, 2.5, 1],
@@ -256,37 +263,27 @@ const HouseScene = ({ devices }: { devices: Record<string, DeviceState> }) => {
           decorKey={key}
         >
           {devicesByRoom[key]?.filter(d => d.type === 'light').map(device => (
-            <React.Fragment key={device.id}>
-              <Wire
-                deviceType="light"
-                roomWallOrigin={outWallOrigin[key]}
-                devicePos={deviceOffsets.light}
-                isOn={device.isOn}
-              />
-              <Light position={deviceOffsets.light} isOn={device.isOn} color="#ffe178" />
-            </React.Fragment>
+            <Light 
+              key={device.id} 
+              position={deviceOffsets.light} 
+              isOn={device.isOn} 
+              color="#ffe178" 
+            />
           ))}
           {devicesByRoom[key]?.filter(d => d.type === 'fan').map(device => (
-            <React.Fragment key={device.id}>
-              <Wire
-                deviceType="fan"
-                roomWallOrigin={outWallOrigin[key]}
-                devicePos={deviceOffsets.fan}
-                isOn={device.isOn}
-              />
-              <Fan position={deviceOffsets.fan} isOn={device.isOn} speed={device.speed || 1} />
-            </React.Fragment>
+            <Fan 
+              key={device.id}
+              position={deviceOffsets.fan} 
+              isOn={device.isOn} 
+              speed={device.speed || 1} 
+            />
           ))}
           {devicesByRoom[key]?.filter(d => d.type === 'switch').map(device => (
-            <React.Fragment key={device.id}>
-              <Wire
-                deviceType="switch"
-                roomWallOrigin={outWallOrigin[key]}
-                devicePos={deviceOffsets.switch}
-                isOn={device.isOn}
-              />
-              <Switch position={deviceOffsets.switch} isOn={device.isOn} />
-            </React.Fragment>
+            <Switch 
+              key={device.id}
+              position={deviceOffsets.switch} 
+              isOn={device.isOn} 
+            />
           ))}
         </Room>
       ))}
