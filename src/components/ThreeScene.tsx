@@ -1,62 +1,139 @@
 
-import React, { useRef, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, useGLTF } from '@react-three/drei';
+import React, { useRef } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
 import { DeviceState } from '@/types/types';
 import * as THREE from 'three';
 
-// Simple room component
-const Room = ({ position = [0, 0, 0], size = [5, 3, 5], color = 'white', children }: any) => {
+// Realistic Room without Roof
+const Wall = ({
+  position = [0, 0, 0],
+  size = [1, 1, 0.1],
+  color = '#e6e6ea'
+}: {
+  position?: [number, number, number];
+  size?: [number, number, number];
+  color?: string;
+}) => (
+  <mesh position={position} receiveShadow castShadow>
+    <boxGeometry args={size} />
+    <meshStandardMaterial color={color} roughness={0.7} metalness={0.1} />
+  </mesh>
+);
+
+const Floor = ({
+  size = [5, 5],
+  color = '#f3f3f3'
+}: {
+  size?: [number, number];
+  color?: string;
+}) => (
+  <mesh position={[0, 0, 0]} receiveShadow>
+    <boxGeometry args={[size[0], 0.12, size[1]]} />
+    <meshStandardMaterial color={color} roughness={0.8} metalness={0.05} />
+  </mesh>
+);
+
+// Room shell: floor + 4 walls (NO ROOF)
+const Room = ({
+  position = [0, 0, 0],
+  size = [5, 3, 5],
+  color = '#e6e6ea',
+  wallColor = '#e6e6ea',
+  floorColor = '#f3f3f3',
+  children,
+}: any) => {
+  const [w, h, d] = size;
+  const t = 0.14; // wall thickness
   return (
-    <group position={position as any}>
-      <mesh position={[0, size[1]/2, 0]} receiveShadow>
-        <boxGeometry args={size as any} />
-        <meshStandardMaterial color={color} side={THREE.BackSide} />
-      </mesh>
+    <group position={position}>
+      {/* Floor */}
+      <Floor size={[w, d]} color={floorColor} />
+      {/* Walls (front, back, left, right) */}
+      <Wall position={[0, h/2, d/2 - t/2]} size={[w, h, t]} color={wallColor} />
+      <Wall position={[0, h/2, -d/2 + t/2]} size={[w, h, t]} color={wallColor} />
+      <Wall position={[-w/2 + t/2, h/2, 0]} size={[t, h, d]} color={wallColor} />
+      <Wall position={[w/2 - t/2, h/2, 0]} size={[t, h, d]} color={wallColor} />
+      {/* Slightly pastel color filtering */}
       {children}
     </group>
   );
 };
 
-// Light device component
-const Light = ({ position, isOn, color = '#ffcc77' }: { position: any, isOn: boolean, color?: string }) => {
+// Light device component (add glow animation)
+const Light = ({
+  position,
+  isOn,
+  color = '#ffe178'
+}: { position: any; isOn: boolean; color?: string }) => {
+  const meshRef = useRef<THREE.Mesh>(null);
+  // Animate emissive intensity for light glow
+  useFrame(({ clock }) => {
+    if (meshRef.current && isOn) {
+      const k = Math.sin(clock.getElapsedTime() * 2) * 0.1 + 0.7;
+      (meshRef.current.material as any).emissiveIntensity = k;
+    }
+  });
   return (
     <group position={position}>
-      <pointLight intensity={isOn ? 1 : 0} color={color} distance={5} castShadow />
-      <mesh position={[0, 0, 0]} castShadow>
-        <sphereGeometry args={[0.2, 16, 16]} />
-        <meshStandardMaterial 
+      {isOn && (
+        <pointLight
+          intensity={0.7}
           color={color}
-          emissive={isOn ? color : 'black'} 
-          emissiveIntensity={isOn ? 0.5 : 0} 
+          distance={4.5}
+          decay={2}
+          castShadow
+          position={[0, -0.2, 0]}
+          shadow-bias={-0.002}
+        />
+      )}
+      <mesh ref={meshRef} castShadow>
+        <sphereGeometry args={[0.23, 24, 24]} />
+        <meshStandardMaterial
+          color={isOn ? color : '#ccc'}
+          emissive={isOn ? color : '#333'}
+          emissiveIntensity={isOn ? 0.8 : 0.1}
+          roughness={.36}
+          metalness={.13}
         />
       </mesh>
     </group>
   );
 };
 
-// Fan device component
-const Fan = ({ position, isOn, speed = 1 }: { position: any, isOn: boolean, speed?: number }) => {
+// Fan device with motion blur effect
+const Fan = ({ position, isOn, speed = 1 }: { position: any; isOn: boolean; speed?: number }) => {
   const fanGroup = useRef<THREE.Group>(null);
-  
-  // Rotate fan blades
-  useFrame(() => {
+
+  useFrame(({ clock }) => {
     if (fanGroup.current && isOn) {
-      fanGroup.current.rotation.y += 0.02 * speed;
+      fanGroup.current.rotation.y += 0.12 * speed;
     }
   });
-  
   return (
     <group position={position}>
+      {/* Motor hub */}
       <mesh castShadow>
-        <cylinderGeometry args={[0.1, 0.1, 0.1, 8]} />
-        <meshStandardMaterial color="#888888" />
+        <cylinderGeometry args={[0.10, 0.10, 0.09, 18]} />
+        <meshStandardMaterial color="#888" metalness={0.35} roughness={0.26} />
       </mesh>
-      <group ref={fanGroup} position={[0, -0.1, 0]}>
-        {[0, 1, 2, 3].map((i) => (
-          <mesh key={i} position={[0, 0, 0]} rotation={[0, i * Math.PI / 2, 0]} castShadow>
-            <boxGeometry args={[0.1, 0.02, 1]} />
-            <meshStandardMaterial color="#888888" />
+      {/* Blades */}
+      <group ref={fanGroup} position={[0, -0.12, 0]}>
+        {[0, 1, 2, 3].map(i => (
+          <mesh
+            key={i}
+            position={[0, 0, 0]}
+            rotation={[0, i * (Math.PI / 2), 0]}
+            castShadow
+          >
+            <boxGeometry args={[0.13, 0.024, 1.05]} />
+            <meshStandardMaterial
+              color="#bcbcc2"
+              metalness={0.28}
+              roughness={0.15}
+              opacity={isOn ? 0.34 : 1}
+              transparent={isOn}
+            />
           </mesh>
         ))}
       </group>
@@ -64,107 +141,144 @@ const Fan = ({ position, isOn, speed = 1 }: { position: any, isOn: boolean, spee
   );
 };
 
-// Switch device component
-const Switch = ({ position, isOn }: { position: any, isOn: boolean }) => {
-  return (
-    <group position={position}>
-      <mesh castShadow>
-        <boxGeometry args={[0.3, 0.4, 0.05]} />
-        <meshStandardMaterial color="#dddddd" />
-      </mesh>
-      <mesh position={[0, isOn ? 0.1 : -0.1, 0.05]} castShadow>
-        <boxGeometry args={[0.1, 0.1, 0.05]} />
-        <meshStandardMaterial color={isOn ? "#88ff88" : "#ff8888"} />
-      </mesh>
-    </group>
-  );
-};
+// Switch (toggle device)
+const Switch = ({ position, isOn }: { position: any; isOn: boolean }) => (
+  <group position={position}>
+    <mesh castShadow>
+      <boxGeometry args={[0.22, 0.36, 0.06]} />
+      <meshStandardMaterial color="#fff" roughness={0.66} metalness={0.05} />
+    </mesh>
+    <mesh position={[0, isOn ? 0.08 : -0.08, 0.05]} castShadow>
+      <boxGeometry args={[0.09, 0.10, 0.04]} />
+      <meshStandardMaterial
+        color={isOn ? "#89f593" : "#f59595"}
+        roughness={0.31}
+        metalness={0.09}
+      />
+    </mesh>
+  </group>
+);
 
-// Main house scene
+// Scene (realistic house, 4 rooms)
 const HouseScene = ({ devices }: { devices: Record<string, DeviceState> }) => {
   const devicesByRoom: Record<string, DeviceState[]> = {};
-  
   Object.values(devices).forEach(device => {
-    if (!devicesByRoom[device.room]) {
-      devicesByRoom[device.room] = [];
-    }
+    if (!devicesByRoom[device.room]) devicesByRoom[device.room] = [];
     devicesByRoom[device.room].push(device);
   });
 
-  // Set up room positions
-  const roomPositions: Record<string, [number, number, number]> = {
-    'living': [0, 0, 0],
-    'kitchen': [7, 0, 0],
-    'bedroom': [0, 0, 7],
-    'bathroom': [7, 0, 7]
+  // Room positions and realistic color mapping
+  const roomCfgs = [
+    {
+      key: "living",
+      pos: [0, 0, 0],
+      wallColor: "#e5deff", // Soft purple
+      floorColor: "#f3f3f3"
+    },
+    {
+      key: "kitchen",
+      pos: [7, 0, 0],
+      wallColor: "#d3e4fd", // Soft blue
+      floorColor: "#f6f7ff"
+    },
+    {
+      key: "bedroom",
+      pos: [0, 0, 7],
+      wallColor: "#fffdee", // Soft yellow
+      floorColor: "#f8f3e6"
+    },
+    {
+      key: "bathroom",
+      pos: [7, 0, 7],
+      wallColor: "#e0ffff", // Soft teal
+      floorColor: "#e8f8fa"
+    }
+  ];
+
+  // Device positions inside rooms (relative to room center)
+  const deviceOffsets = {
+    light: [0, 2.65, -1.1],
+    fan: [1, 2.5, 1],
+    switch: [2, 1.3, 1.8],
   };
 
   return (
     <>
-      {/* Basic lighting */}
-      <ambientLight intensity={0.3} />
-      <directionalLight position={[10, 10, 5]} intensity={0.5} castShadow />
-      
+      {/* Soft ambient + sunlight */}
+      <ambientLight intensity={0.38} />
+      <directionalLight
+        position={[11, 12, 8]}
+        intensity={0.49}
+        color="#fff8e6"
+        castShadow
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+      />
+
       {/* Rooms */}
-      {Object.keys(roomPositions).map(room => (
-        <Room 
-          key={room} 
-          position={roomPositions[room]} 
-          color={room === 'living' ? "#f0f8ff" : 
-                room === 'kitchen' ? "#f5f5dc" : 
-                room === 'bedroom' ? "#e6e6fa" : "#e0ffff"}
+      {roomCfgs.map(({ key, pos, wallColor, floorColor }) => (
+        <Room
+          key={key}
+          position={pos}
+          wallColor={wallColor}
+          floorColor={floorColor}
+          size={[5, 3, 5]}
         >
           {/* Devices */}
-          {devicesByRoom[room]?.filter(d => d.type === 'light').map(device => (
-            <Light 
-              key={device.id} 
-              position={[0, 2.8, 0]} 
-              isOn={device.isOn} 
+          {devicesByRoom[key]?.filter(d => d.type === 'light').map(device => (
+            <Light
+              key={device.id}
+              position={deviceOffsets.light}
+              isOn={device.isOn}
+              color="#ffe178"
             />
           ))}
-          
-          {devicesByRoom[room]?.filter(d => d.type === 'fan').map(device => (
-            <Fan 
-              key={device.id} 
-              position={[0, 2.5, 0]} 
-              isOn={device.isOn} 
+          {devicesByRoom[key]?.filter(d => d.type === 'fan').map(device => (
+            <Fan
+              key={device.id}
+              position={deviceOffsets.fan}
+              isOn={device.isOn}
               speed={device.speed || 1}
             />
           ))}
-          
-          {devicesByRoom[room]?.filter(d => d.type === 'switch').map(device => (
-            <Switch 
-              key={device.id} 
-              position={[2, 1.5, 2.4]} 
-              isOn={device.isOn} 
+          {devicesByRoom[key]?.filter(d => d.type === 'switch').map(device => (
+            <Switch
+              key={device.id}
+              position={deviceOffsets.switch}
+              isOn={device.isOn}
             />
           ))}
         </Room>
       ))}
-      
-      {/* Ground plane */}
-      <mesh position={[3.5, -0.5, 3.5]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+
+      {/* Smooth "garden" ground */}
+      <mesh position={[3.5, -0.61, 3.5]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[20, 20]} />
-        <meshStandardMaterial color="#8a8a8a" />
+        <meshStandardMaterial color="#e4f8e3" roughness={0.92} metalness={0.01} />
       </mesh>
-      
-      {/* Camera controls */}
-      <OrbitControls 
-        enableDamping 
-        dampingFactor={0.1} 
-        maxDistance={20} 
-        minDistance={3}
-        maxPolarAngle={Math.PI / 2 - 0.1} 
+
+      {/* Camera Controls */}
+      <OrbitControls
+        enableDamping
+        dampingFactor={0.14}
+        maxDistance={22}
+        minDistance={5}
+        maxPolarAngle={Math.PI / 2.12}
+        target={[3.5, 1.1, 3.5]}
       />
     </>
   );
 };
 
-// Main component wrapper
+// Main component wrapper with improved aspect ratio & shadowmap
 export const ThreeScene: React.FC<{ devices: Record<string, DeviceState> }> = ({ devices }) => {
   return (
     <div className="w-full h-full">
-      <Canvas shadows camera={{ position: [15, 15, 15], fov: 45 }}>
+      <Canvas
+        shadows="soft"
+        camera={{ position: [11, 12, 18], fov: 38 }}
+        gl={{ toneMapping: THREE.ACESFilmicToneMapping, outputColorSpace: THREE.SRGBColorSpace }}
+      >
         <HouseScene devices={devices} />
       </Canvas>
     </div>
