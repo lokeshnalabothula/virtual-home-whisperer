@@ -1,6 +1,5 @@
-
-import React, { useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import React from 'react';
+import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { DeviceState } from '@/types/types';
 import * as THREE from 'three';
@@ -9,6 +8,7 @@ import {
   Microwave, Toaster, KitchenCounter, DiningTable, Chair, 
   Bed, BathroomSink, Shower 
 } from "./DecorElements";
+import { Sofa, CoffeeTable, Wardrobe, TVWall, PlantBig } from "./HomeAppliances3D";
 
 const Wall = ({
   position = [0, 0, 0],
@@ -23,13 +23,9 @@ const Wall = ({
     <boxGeometry args={size} />
     <meshStandardMaterial
       color={color}
-      roughness={0.45}
-      metalness={0.19}
+      roughness={0.35}
+      metalness={0.1}
     />
-    <mesh position={[0, -size[1] / 2 + 0.07, 0]}>
-      <boxGeometry args={[size[0], 0.12, size[2] * 1.06]} />
-      <meshStandardMaterial color="#ded4be" roughness={0.31} metalness={0.12} />
-    </mesh>
   </mesh>
 );
 
@@ -40,13 +36,13 @@ const Floor = ({
   size?: [number, number];
   color?: string;
 }) => (
-  <mesh position={[0, -0.06, 0]} receiveShadow>
-    <boxGeometry args={[size[0], 0.12, size[1]]} />
+  <mesh position={[0, -0.05, 0]} receiveShadow>
+    <boxGeometry args={[size[0], 0.13, size[1]]} />
     <meshStandardMaterial
       color={color}
-      roughness={0.82}
-      metalness={0.07}
-      opacity={0.97}
+      roughness={0.8}
+      metalness={0.09}
+      opacity={0.98}
       transparent
     />
   </mesh>
@@ -57,33 +53,46 @@ const Room = ({
   size = [5, 3, 5],
   wallColor = "#e6e6ea",
   floorColor = "#f3f3f3",
+  decorKey,
   children,
-  decorKey
 }: any) => {
   const [w, h, d] = size;
-  const t = 0.14; // wall thickness
+  const t = 0.33;
   return (
     <group position={position}>
       <Floor size={[w, d]} color={floorColor} />
-      <Wall position={[0, h / 2, d / 2 - t / 2]} size={[w, h, t]} color={wallColor} />
-      <Wall position={[0, h / 2, -d / 2 + t / 2]} size={[w, h, t]} color={wallColor} />
-      <Wall position={[-w / 2 + t / 2, h / 2, 0]} size={[t, h, d]} color={wallColor} />
-      <Wall position={[w / 2 - t / 2, h / 2, 0]} size={[t, h, d]} color={wallColor} />
+      {decorKey === "living" ? (
+        <>
+          <Wall position={[0, h / 2, d / 2 - t / 2]} size={[w, h, t]} color="#FFDEE2" />
+          <Wall position={[0, h / 2, -d / 2 + t / 2]} size={[w, h, t]} color={wallColor} />
+          <Wall position={[-w / 2 + t / 2, h / 2, 0]} size={[t, h, d]} color="#C8C8C9" />
+          <Wall position={[w / 2 - t / 2, h / 2, 0]} size={[t, h, d]} color="#C8C8C9" />
+        </>
+      ) : (
+        <>
+          <Wall position={[0, h / 2, d / 2 - t / 2]} size={[w, h, t]} color={wallColor} />
+          <Wall position={[0, h / 2, -d / 2 + t / 2]} size={[w, h, t]} color={wallColor} />
+          <Wall position={[-w / 2 + t / 2, h / 2, 0]} size={[t, h, d]} color="#C8C8C9" />
+          <Wall position={[w / 2 - t / 2, h / 2, 0]} size={[t, h, d]} color="#C8C8C9" />
+        </>
+      )}
+      {children}
       {decorKey === "living" && (
         <>
-          <RoomRug position={[0.4, 0.01, 0.6]} />
-          <Plant position={[2.18, 0.14, 2.07]} />
-          <TVSet position={[-1.62, 0.03, -2.05]} />
-          <WallMirrors position={[-2, 1.26, 2.48]} />
-          <DiningTable position={[-1.2, 0.03, 1]} />
-          <Chair position={[-1.2, 0.03, 1.4]} />
-          <Chair position={[-1.6, 0.03, 1]} />
-          <Chair position={[-0.8, 0.03, 1]} />
+          <RoomRug position={[0.5, 0.01, 0.5]} />
+          <Sofa position={[-0.7, 0.01, 0.68]} />
+          <CoffeeTable position={[0.35, 0.01, 1.2]} />
+          <TVWall position={[-1.5, 0.9, -1.98]} />
+          <PlantBig position={[2.1, 0.01, 1.9]} />
+          <WallMirrors position={[-2.2, 1.25, 2.45]} />
+          <DiningTable position={[1.75, 0.03, -1.1]} />
+          <Chair position={[2.15, 0.03, -0.85]} />
+          <Chair position={[1.37, 0.03, -1.3]} />
         </>
       )}
       {decorKey === "kitchen" && (
         <>
-          <Fridge position={[-1.8, 0.5, -2]} />
+          <Fridge position={[-1.5, 0.5, -2]} />
           <KitchenCounter position={[0.2, 0.03, -1.8]} />
           <CoffeeMaker position={[-0.6, 0.5, -1.8]} />
           <Microwave position={[0.2, 0.92, -1.8]} />
@@ -92,19 +101,19 @@ const Room = ({
       )}
       {decorKey === "bedroom" && (
         <>
-          <RoomRug position={[0, 0.01, 0]} />
-          <Bed position={[0, 0.03, 0]} />
-          <Plant position={[1.8, 0.14, -1.8]} />
+          <RoomRug position={[-0.65, 0.01, 0.75]} />
+          <Bed position={[0.1, 0.03, -0.2]} />
+          <Wardrobe position={[2.01, 0.01, 1.6]} />
+          <Plant position={[1.2, 0.14, -1.2]} />
         </>
       )}
       {decorKey === "bathroom" && (
         <>
-          <RoomRug position={[0, 0.01, 1.8]} />
-          <BathroomSink position={[-1.8, 0.03, -1.8]} />
-          <Shower position={[1.8, 0.03, -1.8]} />
+          <RoomRug position={[0.2, 0.01, 1.38]} />
+          <BathroomSink position={[-0.7, 0.03, -1.16]} />
+          <Shower position={[1, 0.03, -1.1]} />
         </>
       )}
-      {children}
     </group>
   );
 };
@@ -114,7 +123,7 @@ const Light = ({
   isOn,
   color = '#ffe178'
 }: { position: any; isOn: boolean; color?: string }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     if (meshRef.current && isOn) {
       const k = Math.sin(clock.getElapsedTime() * 2) * 0.1 + 0.7;
@@ -148,9 +157,10 @@ const Light = ({
   );
 };
 
-const Fan = ({ position, isOn, speed = 1 }: { position: any; isOn: boolean; speed?: number }) => {
-  const fanGroup = useRef<THREE.Group>(null);
-
+const Fan = ({
+  position, isOn, speed = 1
+}: { position: any; isOn: boolean; speed?: number }) => {
+  const fanGroup = React.useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (fanGroup.current && isOn) {
       fanGroup.current.rotation.y += 0.12 * speed;
@@ -213,41 +223,41 @@ const HouseScene = ({ devices }: { devices: Record<string, DeviceState> }) => {
     {
       key: "living",
       pos: [0, 0, 0] as [number, number, number],
-      wallColor: "#e5deff",
+      wallColor: "#F1F0FB",
       floorColor: "#f3f3f3"
     },
     {
       key: "kitchen",
-      pos: [7, 0, 0] as [number, number, number],
+      pos: [4.95, 0, 0] as [number, number, number],
       wallColor: "#d3e4fd",
       floorColor: "#f6f7ff"
     },
     {
       key: "bedroom",
-      pos: [0, 0, 7] as [number, number, number],
+      pos: [0, 0, 4.6] as [number, number, number],
       wallColor: "#fffdee",
       floorColor: "#f8f3e6"
     },
     {
       key: "bathroom",
-      pos: [7, 0, 7] as [number, number, number],
+      pos: [4.95, 0, 4.6] as [number, number, number],
       wallColor: "#e0ffff",
       floorColor: "#e8f8fa"
     }
   ];
 
   const deviceOffsets: Record<string, [number, number, number]> = {
-    light: [0, 2.65, -1.1],
-    fan: [1, 2.5, 1],
-    switch: [1.8, 1.3, 1.8],
+    light: [0, 2.48, -1.1],
+    fan: [1, 2.45, 1],
+    switch: [1.8, 1.2, 1.8],
   };
 
   return (
     <>
-      <ambientLight intensity={0.43} color="#eae9ff" />
+      <ambientLight intensity={0.41} color="#eae9ff" />
       <directionalLight
-        position={[10, 11.2, 8.8]}
-        intensity={0.7}
+        position={[9, 10.2, 9.2]}
+        intensity={0.67}
         color="#fffcf7"
         castShadow
         shadow-mapSize-width={1024}
@@ -259,7 +269,7 @@ const HouseScene = ({ devices }: { devices: Record<string, DeviceState> }) => {
           position={pos}
           wallColor={wallColor}
           floorColor={floorColor}
-          size={[5, 3, 5]}
+          size={[4.6, 2.8, 4.6]}
           decorKey={key}
         >
           {devicesByRoom[key]?.filter(d => d.type === 'light').map(device => (
@@ -287,17 +297,17 @@ const HouseScene = ({ devices }: { devices: Record<string, DeviceState> }) => {
           ))}
         </Room>
       ))}
-      <mesh position={[3.5, -0.68, 3.5]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[24, 24]} />
+      <mesh position={[2.5, -0.72, 2.5]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[14, 10]} />
         <meshStandardMaterial color="#e3f7ea" roughness={0.91} metalness={0.019} />
       </mesh>
       <OrbitControls
         enableDamping
         dampingFactor={0.15}
-        maxDistance={23}
+        maxDistance={20}
         minDistance={4}
-        maxPolarAngle={Math.PI / 2.18}
-        target={[3.5, 1.1, 3.5]}
+        maxPolarAngle={Math.PI / 2.14}
+        target={[2.5, 1.1, 2.5]}
       />
     </>
   );
@@ -308,7 +318,7 @@ export const ThreeScene: React.FC<{ devices: Record<string, DeviceState> }> = ({
     <div className="w-full h-full">
       <Canvas
         shadows="soft"
-        camera={{ position: [11, 12, 18], fov: 38 }}
+        camera={{ position: [9, 9, 16], fov: 38 }}
         gl={{ toneMapping: THREE.ACESFilmicToneMapping, outputColorSpace: THREE.SRGBColorSpace }}
       >
         <HouseScene devices={devices} />
